@@ -291,6 +291,6 @@ open class InstrumentedTests {
          * Wait time constants.
          */
         private const val CONFIG_TIMEOUT = 4000
-        private const val EXPECTED_IMAGE_COUNT = 100
+        private const val EXPECTED_IMAGE_COUNT = 96
     }
 }

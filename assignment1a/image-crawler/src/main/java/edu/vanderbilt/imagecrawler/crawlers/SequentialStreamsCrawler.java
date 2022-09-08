@@ -51,7 +51,17 @@ public class SequentialStreamsCrawler // Loaded via reflection
 
         // TODO -- you fill in here replacing this statement with your
         // solution.
-        return 0;
+
+        return Stream.of(pageUri)       // Use a factory method to create a one-element stream
+                // filter out pageUri if it exceeds max depth or if it was already visited.
+                .filter(uri -> depth <= mMaxDepth && mUniqueUris.putIfAbsent(uri))
+                //  call the crawlPage() method and return the total number of processed images.
+                .mapToInt(uri -> crawlPage(uri, depth))
+                // get the total number of processed images from the one-element stream.
+                .findFirst()
+                // if no element in stream
+                .orElse(0);
+
     }
 
     /**
@@ -82,7 +92,19 @@ public class SequentialStreamsCrawler // Loaded via reflection
         // and stored.
         // TODO -- you fill in here replacing this statement with your
         // solution.
-        return 0;
+
+        return Stream.of(pageUri)       // Use a factory method to create a one-element stream
+                // Get the HTML page associated with the pageUri param.
+                .map(uri -> mWebPageCrawler.getPage(uri))
+                // Filter out a missing (i.e., null) HTML page.
+                .filter(Objects::nonNull)
+                // Call processPage() to process images encountered
+                .mapToInt(page -> processPage(page, depth))
+                //  get the total number
+                .findFirst()
+                // if no element in stream
+                .orElse(0);
+
     }
 
     /**
@@ -107,7 +129,13 @@ public class SequentialStreamsCrawler // Loaded via reflection
         // Return a count of of all images processed on/from this page.
         // TODO -- you fill in here replacing this statement with your
         // solution.
-        return 0;
+
+        return page.getPageElementsAsStream(IMAGE, PAGE)    // Get a sequential stream containing all the image/page
+                // Map each web element into the count of images produced
+                .mapToInt(w -> w.getType() == IMAGE ? processImage(w.getURL()) : performCrawl(w.getUrl(), depth + 1))
+                // Sum all the results together.
+                .sum();
+
     }
 
     /**
@@ -129,7 +157,17 @@ public class SequentialStreamsCrawler // Loaded via reflection
 
         // TODO -- you fill in here replacing this statement with your
         // solution.
-        return 0;
+
+        return Stream.of(url)   // Use a factory method to create a one-element stream
+                // Get or download the image from the given url.
+                .map(u -> getOrDownloadImage(u))
+                // Filter out a missing (i.e., null) page.
+                .filter(Objects::nonNull)
+                // Transform the image and return a count of the number of
+                .mapToInt(image -> transformImage(image))
+                // Sum the number of images that were processed.
+                .sum();
+
     }
 
     /**
@@ -168,7 +206,17 @@ public class SequentialStreamsCrawler // Loaded via reflection
 
         // TODO -- you fill in here replacing this statement with your
         // solution.
-        return 0;
+
+        return (int) mTransforms.stream()    // Convert the List of transforms into a sequential stream.
+                // Attempt to create new cache item for each image and filter out any image that has already been locally
+                .filter(transform -> createNewCacheItem(image, transform))
+                // Apply each transform to the original image
+                .map(transform -> applyTransform(transform, image))
+                // Filter out any null images that weren't transformed.
+                .filter(Objects::nonNull)
+                // Count the number of non-null images that were transformed.
+                .count();
+
     }
 
     /**
